@@ -179,6 +179,19 @@ window.bookmarklet.executeMyBookmarklet = function () {
 
             });
 
+            $("span.display-name").dblclick(function() {
+                var col = $(this).parents(".column.ng-isolate-scope");
+                var result = "";
+
+                col.find("div.card").each(function(i, e) {
+                    var title = $(e).find('.card-body textarea').val();
+                    result+= title + "\n" ;
+                });
+
+                console.log(result);
+
+            });
+
             window.bookmarklet.die();
         }
     };
