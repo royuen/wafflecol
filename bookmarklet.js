@@ -1,199 +1,42 @@
-/*
- * ANS jQuery Bookmarklet launcher (v.3.0)
- *
- * A navalla suíza (http://idc.anavallasuiza.com/project/bookmarklet/)
- *
- * Released under the Creative Commons Attribution 3.0 Unported License,
- * as defined here: http://creativecommons.org/licenses/by/3.0/
- */
+var parseData = function(card) {
+  var cardTitle = $(card).find('.card-body').find('textarea').val();
+  var cardNumber = $(card).find(".card-number span[bo-bind='card.githubMetadata.number']").text();
 
-"use strict";
+  return {
+    issueNumber: '#' + cardNumber + ' - ',
+    title: cardTitle + '\n'
+  }
+}
 
-window.bookmarklet = {
-	css: {},
-	js: {},
-	jQuery: false,
+var printClickedColumnCards = function(columnText, isDoubleClick) {
+  var cards = $(columnText).parents('.column').find('.card');
+  var parsedCards = "";
 
-	launch: function (file) {
-		if (!file) {
-			return false;
-		}
+  for (var i = 0; i < cards.length; i++) {
+    var parsedCard = parseData(cards[i]);
+    if (isDoubleClick) {
+      parsedCards += parsedCard.title
+    } else {
+      parsedCards += (parsedCard.issueNumber + parsedCard.title);
+    }
+  }
+  console.log(parsedCards);
+}
 
-		this.loadJS(file, function () {
-			var options = window.bookmarklet.options || {};
+if (typeof jQuery === 'undefined') {
+  alert('jQUery not available, consider update this script');
+} else {
+  $(document).ready(function(){
+    $('.column-text').css('cursor', 'pointer');
 
-			window.bookmarklet.execute(options);
-		});
-	},
-	execute: function (options) {
-		if (typeof(options.css) !== 'object') {
-			if (options.css) {
-				options.css = [options.css];
-			} else {
-				options.css = [];
-			}
-		}
+    $('.column-text').click(function(){
+      var isDoubleClick = false;
+      printClickedColumnCards(this, isDoubleClick);
+    });
 
-		if (typeof(options.js) !== 'object') {
-			if (options.js) {
-				options.js = [options.js];
-			} else {
-				options.js = [];
-			}
-		}
-
-		//Load css
-		if (options.css.length) {
-			var i;
-
-			for (i in options.css) {
-				window.bookmarklet.loadCSS(options.css[i]);
-			}
-		}
-
-		//Load jQuery
-		if (options.jquery) {
-			options.js.unshift(options.jquery);
-		}
-
-		//Load js
-		window.bookmarklet.loadMultipleJS(options.js, function () {
-			if (options.jquery) {
-				if (!window.bookmarklet.jQuery) {
-					window.bookmarklet.jQuery = window.jQuery.noConflict(true);
-				}
-
-				window.bookmarklet.jQuery(options.ready);
-			} else {
-				options.ready();
-			}
-		});
-	},
-	loadMultipleJS: function (files, onload) {
-		if (files.length === 0) {
-			if (onload) {
-				onload();
-			}
-			
-			return true;
-		}
-
-		this.loadJS(files.shift(), function () {
-			window.bookmarklet.loadMultipleJS(files, onload);
-		});
-	},
-	loadJS: function (file, onload) {
-		var element = this.loadedJS(file);
-
-		if (element) {
-			if (typeof onload === 'function') {
-				onload.call(element);
-			}
-
-			return false;
-		}
-
-		element = document.createElement('script');
-		element.type = 'text/javascript';
-		element.src = file;
-
-		if (!document.attachEvent) {
-			element.onload = onload;
-		} else if (typeof onload === 'function') {
-			element.onreadystatechange = function () {
-				if (element.readyState === 'complete' || element.readyState === 'loaded') {
-					onload.call(element);
-					element.onreadystatechange = null;
-				}
-			};
-		}
-
-		document.body.appendChild(element);
-
-		this.js[file] = element;
-
-		return element;
-	},
-	loadCSS: function (file) {
-		if (this.loadedCSS(file)) {
-			return false;
-		}
-
-		var element = document.createElement('link');
-		element.setAttribute('rel', 'stylesheet');
-		element.setAttribute('type', 'text/css');
-		element.setAttribute('href', file);
-
-		document.getElementsByTagName('head')[0].appendChild(element);
-
-		this.css[file] = element;
-
-		return element;
-	},
-	loadedJS: function (file) {
-		if (this.js[file]) {
-			return this.js[file];
-		}
-
-		return false;
-	},
-	loadedCSS: function (file) {
-		if (this.css[file]) {
-			return this.css[file];
-		}
-
-		return false;
-	},
-	die: function () {
-		var i;
-
-		for (i in this.js) {
-			this.js[i].parentNode.removeChild(this.js[i]);
-		}
-		for (i in this.css) {
-			this.css[i].parentNode.removeChild(this.css[i]);
-		}
-
-		this.js = {};
-		this.css = {};
-		this.jQuery = false;
-	}
-};
-
-window.bookmarklet.executeMyBookmarklet = function () {
-    var options = {
-        jquery: 'https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js',
-        ready: function ($) {
-            $("span.display-name").css('cursor', 'pointer');
-            $("span.display-name").click(function() {
-                var col = $(this).parents(".column.ng-isolate-scope");
-                var result = "";
-
-                col.find("div.card").each(function(i, e) {
-                    var card_number = $(e).find('button.card-number').html();
-                    var title = $(e).find('.card-body textarea').val();
-                    result+= "#"+card_number+" - " + title + "\n" ;
-                });
-
-                console.log(result);
-
-            });
-
-            $("span.display-name").dblclick(function() {
-                var col = $(this).parents(".column.ng-isolate-scope");
-                var result = "";
-
-                col.find("div.card").each(function(i, e) {
-                    var title = $(e).find('.card-body textarea').val();
-                    result+= title + "\n" ;
-                });
-
-                console.log(result);
-
-            });
-
-            window.bookmarklet.die();
-        }
-    };
-    window.bookmarklet.execute(options);
+    $('.column-text').dblclick(function(){
+      var isDoubleClick = true;
+      printClickedColumnCards(this, isDoubleClick);
+    });
+  })
 }
